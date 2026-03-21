@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MASP Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --border: #2a2d35;
+    --accent: #7fff6e;
+    --accent-dim: rgba(127,255,110,0.12);
+    --text: #e8eaed;
+    --text-muted: #6b7280;
+    --user-bg: #1e2028;
+    --bot-bg: #131518;
+    --radius: 14px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+  }
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; box-shadow: 0 0 8px var(--accent); }
+    50% { opacity: 0.6; box-shadow: 0 0 18px var(--accent); }
+  }
+  .header-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .header-badge {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 8px;
+    border-radius: 99px;
+    letter-spacing: 0.06em;
+    opacity: 0.8;
+  }
+  .persona-bar {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    background: var(--surface);
+    overflow-x: auto;
+  }
+  .persona-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 5px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s;
+  }
+  .persona-btn.active, .persona-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .msg {
+    max-width: 74%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: fadeUp .3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .msg.user { align-self: flex-end; }
+  .msg.bot  { align-self: flex-start; }
+  .msg-label {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 4px;
+  }
+  .msg.user .msg-label { text-align: right; color: var(--accent); opacity: 0.7; }
+  .msg-bubble {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg.user .msg-bubble {
+    background: var(--user-bg);
+    border: 1px solid var(--border);
+    border-bottom-right-radius: 4px;
+  }
+  .msg.bot .msg-bubble {
+    background: var(--bot-bg);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .typing-dots { display: flex; gap: 5px; padding: 4px 0; }
+  .typing-dots span {
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0.4;
+    animation: blink 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: .2s; }
+  .typing-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,100%{opacity:.2} 50%{opacity:1} }
+  #input-area {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  #user-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 11px 16px;
+    resize: none;
+    min-height: 44px;
+    max-height: 140px;
+    outline: none;
+    line-height: 1.5;
+    transition: border-color .2s;
+  }
+  #user-input:focus { border-color: var(--accent); }
+  #user-input::placeholder { color: var(--text-muted); }
+  #send-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    width: 44px; height: 44px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: opacity .2s, transform .1s;
+  }
+  #send-btn:hover { opacity: 0.85; }
+  #send-btn:active { transform: scale(.94); }
+  #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  #send-btn svg { width: 18px; height: 18px; }
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px;
+  }
+  .empty-state .big {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text);
+    opacity: 0.15;
+    line-height: 1;
+  }
+  .empty-state p { font-size: 13px; max-width: 260px; opacity: 0.5; }
+  .suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+  .sug-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .sug-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  #clear-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all .2s;
+    margin-left: auto;
+  }
+  #clear-btn:hover { border-color: #ef4444; color: #ef4444; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-dot"></div>
+  <span class="header-title">MASP Bot</span>
+  <button id="clear-btn" title="Limpar conversa">limpar</button>
+  <span class="header-badge">IA ATIVA</span>
+</header>
+
+<div class="persona-bar">
+  <button class="persona-btn active" data-persona="assistente">🤖 Assistente</button>
+  <button class="persona-btn" data-persona="professor">📚 Professor</button>
+  <button class="persona-btn" data-persona="criativo">🎨 Criativo</button>
+  <button class="persona-btn" data-persona="programador">💻 Programador</button>
+  <button class="persona-btn" data-persona="filosofo">🧠 Filósofo</button>
+  <button class="persona-btn" data-persona="matematico">📐 Matemático</button>
+</div>
+
+<div id="messages">
+  <div class="empty-state" id="empty">
+    <div class="big">Olá.</div>
+    <p>Selecione uma persona e comece a conversar.</p>
+    <div class="suggestions">
+      <button class="sug-btn" onclick="sendSuggestion('O que você pode fazer por mim?')">O que você pode fazer?</button>
+      <button class="sug-btn" onclick="sendSuggestion('Me conte uma curiosidade interessante.')">Curiosidade</button>
+      <button class="sug-btn" onclick="sendSuggestion('Me explique o número Pi de forma criativa.')">O que é Pi?</button>
+      <button class="sug-btn" onclick="sendSuggestion('Como a matemática está presente no dia a dia?')">Matemática no dia a dia</button>
+    </div>
+  </div>
+</div>
+
+<div id="input-area">
+  <textarea id="user-input" placeholder="Digite sua mensagem..." rows="1"></textarea>
+  <button id="send-btn" title="Enviar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#0e0f11" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"></line>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+    </svg>
+  </button>
+</div>
+
+<script>
+const PERSONAS = {
+  assistente: "Você é um assistente prestativo, amigável e direto. Responde sempre em português brasileiro. Seja conciso mas completo.",
+  professor: "Você é um professor paciente e didático. Explica conceitos de forma clara com exemplos práticos. Responde sempre em português brasileiro.",
+  criativo: "Você é um assistente criativo e imaginativo. Use metáforas, analogias e linguagem expressiva. Responde sempre em português brasileiro.",
+  programador: "Você é um programador experiente e pragmático. Foque em código limpo, boas práticas e soluções elegantes. Responde sempre em português brasileiro. Use blocos de código quando relevante.",
+  filosofo: "Você é um filósofo reflexivo. Questione premissas, explore múltiplas perspectivas e convide ao pensamento profundo. Responde sempre em português brasileiro.",
+  matematico: `Você é um matemático especialista com conhecimento profundo e abrangente em todas as áreas da matemática e suas aplicações. Seu domínio inclui:\n\n**Matemática Pura:** Álgebra (linear, abstrata, comutativa), Análise (real, complexa, funcional), Geometria (euclidiana, diferencial, topológica), Teoria dos Números, Lógica Matemática, Teoria dos Conjuntos, Combinatória, Teoria das Categorias.\n\n**Matemática Aplicada:** Cálculo Diferencial e Integral, Equações Diferenciais Ordinárias e Parciais, Álgebra Linear Numérica, Métodos Numéricos, Otimização, Teoria do Caos e Sistemas Dinâmicos, Teoria dos Grafos.\n\n**Probabilidade e Estatística:** Probabilidade clássica e bayesiana, Estatística descritiva e inferencial, Processos Estocásticos, Cadeia de Markov, Estatística multivariada.\n\n**Aplicações Práticas:** Modelagem matemática em física, engenharia, economia e biologia. Criptografia e teoria da informação. Machine Learning e Inteligência Artificial (álgebra linear, cálculo, probabilidade). Finanças quantitativas e atuária. Computação (algoritmos, complexidade, teoria dos autômatos).\n\n**Aplicações Sociais:** Modelos epidemiológicos (como o SIR usado no COVID-19). Teoria dos Jogos e tomada de decisões coletivas. Matemática eleitoral (sistemas de votação, paradoxo de Arrow). Modelagem econômica e desigualdade social (índice de Gini). Redes sociais e teoria dos grafos. Matemática na educação e inclusão.\n\n**Estilo de resposta:**\n- Explique com clareza, usando exemplos concretos e do cotidiano\n- Quando relevante, mostre equações e passo a passo\n- Conecte sempre a teoria à sua aplicação prática ou social\n- Use analogias criativas para conceitos abstratos\n- Incentive o raciocínio lógico e a curiosidade\n- Se o usuário errar, corrija com gentileza e explique o motivo\n- Responda sempre em português brasileiro`
+};
+
+let currentPersona = "assistente";
+let history = [];
+let isLoading = false;
+
+const messagesEl = document.getElementById("messages");
+const inputEl = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const emptyEl = document.getElementById("empty");
+
+document.querySelectorAll(".persona-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".persona-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentPersona = btn.dataset.persona;
+  });
+});
+
+document.getElementById("clear-btn").addEventListener("click", () => {
+  history = [];
+  messagesEl.innerHTML = '';
+  messagesEl.appendChild(emptyEl);
+  emptyEl.style.display = '';
+});
+
+inputEl.addEventListener("input", () => {
+  inputEl.style.height = "auto";
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + "px";
+});
+inputEl.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+sendBtn.addEventListener("click", sendMessage);
+
+function sendSuggestion(text) {
+  inputEl.value = text;
+  sendMessage();
+}
+
+function appendMessage(role, text) {
+  if (emptyEl.parentNode) emptyEl.style.display = 'none';
+  const div = document.createElement("div");
+  div.className = `msg ${role}`;
+  const label = document.createElement("div");
+  label.className = "msg-label";
+  label.textContent = role === "user" ? "você" : currentPersona;
+  const bubble = document.createElement("div");
+  bubble.className = "msg-bubble";
+  bubble.textContent = text;
+  div.appendChild(label);
+  div.appendChild(bubble);
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return bubble;
+}
+
+function showTyping() {
+  if (emptyEl.parentNode) emptyEl.style.display = 'none';
+  const div = document.createElement("div");
+  div.className = "msg bot";
+  div.id = "typing-indicator";
+  const label = document.createElement("div");
+  label.className = "msg-label";
+  label.textContent = currentPersona;
+  const bubble = document.createElement("div");
+  bubble.className = "msg-bubble";
+  bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  div.appendChild(label);
+  div.appendChild(bubble);
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById("typing-indicator");
+  if (el) el.remove();
+}
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || isLoading) return;
+
+  isLoading = true;
+  sendBtn.disabled = true;
+  inputEl.value = "";
+  inputEl.style.height = "auto";
+
+  appendMessage("user", text);
+  history.push({ role: "user", content: text });
+  showTyping();
+
+  try {
+    // Chama o backend local — a chave fica segura no servidor
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system: PERSONAS[currentPersona],
+        messages: history
+      })
+    });
+
+    const data = await response.json();
+    removeTyping();
+
+    if (data.error) {
+      appendMessage("bot", "⚠️ Erro: " + data.error);
+      history.pop();
+    } else {
+      const reply = data.content?.map(b => b.text || "").join("") || "Sem resposta.";
+      history.push({ role: "assistant", content: reply });
+      appendMessage("bot", reply);
+    }
+
+  } catch (err) {
+    removeTyping();
+    appendMessage("bot", "⚠️ Erro de conexão com o servidor.");
+    history.pop();
+  }
+
+  isLoading = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+</script>
+</body>
+</html>
