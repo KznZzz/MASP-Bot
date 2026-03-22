@@ -430,12 +430,10 @@ async function sendMessage() {
   showTyping();
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
         system: PERSONAS[currentPersona],
         messages: history
       })
@@ -444,9 +442,14 @@ async function sendMessage() {
     const data = await response.json();
     removeTyping();
 
-    const reply = data.content?.map(b => b.text || "").join("") || "Erro ao obter resposta.";
-    history.push({ role: "assistant", content: reply });
-    appendMessage("bot", reply);
+    if (data.error) {
+      appendMessage("bot", "⚠️ Erro: " + data.error);
+      history.pop();
+    } else {
+      const reply = data.content?.map(b => b.text || "").join("") || "Erro ao obter resposta.";
+      history.push({ role: "assistant", content: reply });
+      appendMessage("bot", reply);
+    }
 
   } catch (err) {
     removeTyping();
