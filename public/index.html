@@ -25,10 +25,13 @@
     font-family: 'DM Mono', monospace;
     font-size: 14px;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
+
+  /* Header */
   header {
     padding: 18px 24px;
     border-bottom: 1px solid var(--border);
@@ -53,6 +56,7 @@
     font-size: 18px;
     font-weight: 600;
     letter-spacing: -0.02em;
+    color: var(--text);
   }
   .header-badge {
     margin-left: auto;
@@ -64,6 +68,8 @@
     letter-spacing: 0.06em;
     opacity: 0.8;
   }
+
+  /* Persona selector */
   .persona-bar {
     padding: 12px 24px;
     border-bottom: 1px solid var(--border);
@@ -89,6 +95,8 @@
     color: var(--accent);
     background: var(--accent-dim);
   }
+
+  /* Messages */
   #messages {
     flex: 1;
     overflow-y: auto;
@@ -99,6 +107,7 @@
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
+
   .msg {
     max-width: 74%;
     display: flex;
@@ -112,6 +121,7 @@
   }
   .msg.user { align-self: flex-end; }
   .msg.bot  { align-self: flex-start; }
+
   .msg-label {
     font-size: 10px;
     letter-spacing: 0.08em;
@@ -120,6 +130,7 @@
     padding: 0 4px;
   }
   .msg.user .msg-label { text-align: right; color: var(--accent); opacity: 0.7; }
+
   .msg-bubble {
     padding: 12px 16px;
     border-radius: var(--radius);
@@ -131,13 +142,19 @@
     background: var(--user-bg);
     border: 1px solid var(--border);
     border-bottom-right-radius: 4px;
+    color: var(--text);
   }
   .msg.bot .msg-bubble {
     background: var(--bot-bg);
     border: 1px solid var(--border);
     border-bottom-left-radius: 4px;
+    color: var(--text);
   }
-  .typing-dots { display: flex; gap: 5px; padding: 4px 0; }
+
+  /* Typing indicator */
+  .typing-dots {
+    display: flex; gap: 5px; padding: 4px 0;
+  }
   .typing-dots span {
     width: 7px; height: 7px;
     background: var(--accent);
@@ -148,6 +165,8 @@
   .typing-dots span:nth-child(2) { animation-delay: .2s; }
   .typing-dots span:nth-child(3) { animation-delay: .4s; }
   @keyframes blink { 0%,100%{opacity:.2} 50%{opacity:1} }
+
+  /* Input */
   #input-area {
     padding: 16px 24px 20px;
     border-top: 1px solid var(--border);
@@ -174,6 +193,7 @@
   }
   #user-input:focus { border-color: var(--accent); }
   #user-input::placeholder { color: var(--text-muted); }
+
   #send-btn {
     background: var(--accent);
     border: none;
@@ -188,6 +208,7 @@
   #send-btn:active { transform: scale(.94); }
   #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
   #send-btn svg { width: 18px; height: 18px; }
+
   .empty-state {
     flex: 1;
     display: flex;
@@ -209,7 +230,10 @@
     line-height: 1;
   }
   .empty-state p { font-size: 13px; max-width: 260px; opacity: 0.5; }
-  .suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+
+  .suggestions {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px;
+  }
   .sug-btn {
     font-family: 'DM Mono', monospace;
     font-size: 12px;
@@ -222,6 +246,7 @@
     transition: all .2s;
   }
   .sug-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
   #clear-btn {
     background: transparent;
     border: 1px solid var(--border);
@@ -235,6 +260,21 @@
     margin-left: auto;
   }
   #clear-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+  /* Mobile fixes */
+  @media (max-width: 600px) {
+    header { padding: 12px 16px; }
+    .header-title { font-size: 16px; }
+    .persona-bar { padding: 10px 12px; }
+    #messages { padding: 16px 12px; }
+    .msg { max-width: 90%; }
+    #input-area {
+      padding: 10px 12px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    #user-input { font-size: 16px; } /* evita zoom automático no iOS */
+  }
+
 </style>
 </head>
 <body>
@@ -297,6 +337,7 @@ const inputEl = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const emptyEl = document.getElementById("empty");
 
+// Persona buttons
 document.querySelectorAll(".persona-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".persona-btn").forEach(b => b.classList.remove("active"));
@@ -305,6 +346,7 @@ document.querySelectorAll(".persona-btn").forEach(btn => {
   });
 });
 
+// Clear
 document.getElementById("clear-btn").addEventListener("click", () => {
   history = [];
   messagesEl.innerHTML = '';
@@ -312,10 +354,12 @@ document.getElementById("clear-btn").addEventListener("click", () => {
   emptyEl.style.display = '';
 });
 
+// Input auto-resize
 inputEl.addEventListener("input", () => {
   inputEl.style.height = "auto";
   inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + "px";
 });
+
 inputEl.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
@@ -328,14 +372,18 @@ function sendSuggestion(text) {
 
 function appendMessage(role, text) {
   if (emptyEl.parentNode) emptyEl.style.display = 'none';
+
   const div = document.createElement("div");
   div.className = `msg ${role}`;
+
   const label = document.createElement("div");
   label.className = "msg-label";
   label.textContent = role === "user" ? "você" : currentPersona;
+
   const bubble = document.createElement("div");
   bubble.className = "msg-bubble";
   bubble.textContent = text;
+
   div.appendChild(label);
   div.appendChild(bubble);
   messagesEl.appendChild(div);
@@ -348,12 +396,15 @@ function showTyping() {
   const div = document.createElement("div");
   div.className = "msg bot";
   div.id = "typing-indicator";
+
   const label = document.createElement("div");
   label.className = "msg-label";
   label.textContent = currentPersona;
+
   const bubble = document.createElement("div");
   bubble.className = "msg-bubble";
   bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+
   div.appendChild(label);
   div.appendChild(bubble);
   messagesEl.appendChild(div);
@@ -379,11 +430,12 @@ async function sendMessage() {
   showTyping();
 
   try {
-    // Chama o backend local — a chave fica segura no servidor
-    const response = await fetch("/api/chat", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
         system: PERSONAS[currentPersona],
         messages: history
       })
@@ -392,18 +444,13 @@ async function sendMessage() {
     const data = await response.json();
     removeTyping();
 
-    if (data.error) {
-      appendMessage("bot", "⚠️ Erro: " + data.error);
-      history.pop();
-    } else {
-      const reply = data.content?.map(b => b.text || "").join("") || "Sem resposta.";
-      history.push({ role: "assistant", content: reply });
-      appendMessage("bot", reply);
-    }
+    const reply = data.content?.map(b => b.text || "").join("") || "Erro ao obter resposta.";
+    history.push({ role: "assistant", content: reply });
+    appendMessage("bot", reply);
 
   } catch (err) {
     removeTyping();
-    appendMessage("bot", "⚠️ Erro de conexão com o servidor.");
+    appendMessage("bot", "⚠️ Erro de conexão. Verifique sua chave de API e tente novamente.");
     history.pop();
   }
 
