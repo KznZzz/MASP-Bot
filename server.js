@@ -29,7 +29,7 @@ app.post("/api/chat", async (req, res) => {
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "llama3-70b-8192", // ou "llama3-70b-8192"
+        model: "llama-3.3-70b-versatile", // ou "llama3-70b-8192"
         max_tokens: 1000,
         messages: [
           { role: "system", content: system || "Você é um assistente útil." },
