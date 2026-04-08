@@ -9,10 +9,10 @@ app.use(express.json());
 app.use(express.static("public"));
 
 app.post("/api/chat", async (req, res) => {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: "Chave de API não configurada no servidor." });
+    return res.status(500).json({ error: "Chave da Groq não configurada." });
   }
 
   const { messages, system } = req.body;
@@ -22,14 +22,14 @@ app.post("/api/chat", async (req, res) => {
   }
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "mixtral-8x7b-32768", // ou "llama3-70b-8192"
         max_tokens: 1000,
         messages: [
           { role: "system", content: system || "Você é um assistente útil." },
@@ -41,18 +41,18 @@ app.post("/api/chat", async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || "Erro na API da OpenAI." });
+      return res.status(response.status).json({ error: data.error?.message || "Erro na API da Groq." });
     }
 
     const text = data.choices?.[0]?.message?.content || "Sem resposta.";
     res.json({ content: [{ type: "text", text }] });
 
   } catch (err) {
-    console.error("Erro ao chamar OpenAI:", err);
+    console.error("Erro ao chamar Groq:", err);
     res.status(500).json({ error: "Erro interno do servidor." });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ MASP Bot (OpenAI) rodando em http://localhost:${PORT}`);
+  console.log(`🚀 Bot (Groq) rodando em http://localhost:${PORT}`);
 });
